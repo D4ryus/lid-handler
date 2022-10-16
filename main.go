@@ -73,6 +73,12 @@ func onSignal(obj dbus.BusObject, signal *dbus.Signal, onLidChanged func(bool) e
 	return fmt.Errorf("LidIsClosed was not invalidated")
 }
 
+func usage(code int) {
+	log.Printf("usage: %s [brightness-file]\n", os.Args[0])
+	log.Printf("  If brightness-file is not specified it defaults to %s", brightnessFile)
+	os.Exit(code)
+}
+
 func main() {
 	log.SetFlags(0) // Systemd will prefix with timestamps
 
@@ -80,12 +86,15 @@ func main() {
 	case 1:
 		break
 	case 2:
-		brightnessFile = os.Args[1]
+		switch os.Args[1] {
+		case "-h", "--help":
+			usage(0)
+		default:
+			brightnessFile = os.Args[1]
+		}
 	default:
 		log.Printf("Error: Invalid arguments specified!\n")
-		log.Printf("usage: %s [brightness-file]\n", os.Args[0])
-		log.Printf("  If brightness-file is not specified it defaults to %s", brightnessFile)
-		os.Exit(1)
+		usage(1)
 	}
 
 	conn, err := dbus.ConnectSystemBus()
