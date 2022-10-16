@@ -2,11 +2,10 @@
 
 A Lid-Handler daemon that listens for dbus signals from UPower and sets the screen brightness to zero when the Lid is closed and restores it when opened.
 
-## Build
+## Install
 
 ```
-go get lid-handler
-go build
+go install github.com/d4ryus/lid-handler
 ```
 
 ## As systemd user service
