@@ -1,4 +1,4 @@
-module lid-handler
+module github.com/d4ryus/lid-handler
 
 go 1.19
 
