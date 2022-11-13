@@ -29,36 +29,17 @@ func onSignal(obj dbus.BusObject, signal *dbus.Signal, onLidChanged func(bool) e
 	if signal.Name != "org.freedesktop.DBus.Properties.PropertiesChanged" {
 		return fmt.Errorf("unexpected signal: %v", signal.Name)
 	}
-	if bl := len(signal.Body); bl != 3 {
-		return fmt.Errorf("unexpected body length: %v", bl)
+	var name string
+	var changed map[string]dbus.Variant
+	var invalidated []string
+	if err := dbus.Store(signal.Body, &name, &changed, &invalidated); err != nil {
+		return fmt.Errorf("invalid PropertiesChanged body")
 	}
-	// PropertiesChanged signals have 3 body elements:
-	// 0: The interface (always UPower, see MatchArg below)
-	// 1: A map of changed properties with their new values and
-	// 2: A list of properties that were invalidated
-	name, ok := signal.Body[0].(string)
-	if !ok {
-		return fmt.Errorf("unexpected interface type")
-	}
-	if name != "org.freedesktop.UPower" {
-		return fmt.Errorf("unexpected interface name: %v", name)
-	}
-	changed, ok := signal.Body[1].(map[string]dbus.Variant)
-	if !ok {
-		return fmt.Errorf("unexpected changed type")
-	}
-	variant, ok := changed["LidIsClosed"]
-	if ok {
-		closed, ok := variant.Value().(bool)
-		if !ok {
-			return fmt.Errorf("unexpected LidIsClosed type")
+	if variant, ok := changed["LidIsClosed"]; ok {
+		if closed, ok := variant.Value().(bool); ok {
+			return onLidChanged(closed)
 		}
-		return onLidChanged(closed)
-	}
-	// Check if it was invalidated instead
-	invalidated, ok := signal.Body[2].([]string)
-	if !ok {
-		return fmt.Errorf("unexpected invalidated type")
+		return fmt.Errorf("unexpected LidIsClosed type")
 	}
 	for _, invalid := range invalidated {
 		if invalid != "LidIsClosed" {
